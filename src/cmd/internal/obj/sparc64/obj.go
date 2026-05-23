@@ -134,7 +134,7 @@ func stacksplit(ctxt *obj.Link, p *obj.Prog, framesize int32) *obj.Prog {
 		p = obj.Appendp(ctxt, p)
 		p.As = AADD
 		p.From.Type = obj.TYPE_CONST
-		p.From.Offset = -StackBias
+		p.From.Offset = StackBias
 		p.Reg = REG_RSP
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = REG_RT2
@@ -151,7 +151,7 @@ func stacksplit(ctxt *obj.Link, p *obj.Prog, framesize int32) *obj.Prog {
 		p = obj.Appendp(ctxt, p)
 		p.As = AADD
 		p.From.Type = obj.TYPE_CONST
-		p.From.Offset = int64(-StackBias - (framesize - obj.StackSmall))
+		p.From.Offset = int64(StackBias - (framesize - obj.StackSmall))
 		p.Reg = REG_RSP
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = REG_RT2
@@ -189,7 +189,7 @@ func stacksplit(ctxt *obj.Link, p *obj.Prog, framesize int32) *obj.Prog {
 		p = obj.Appendp(ctxt, p)
 		p.As = AADD
 		p.From.Type = obj.TYPE_CONST
-		p.From.Offset = -StackBias
+		p.From.Offset = StackBias
 		p.Reg = REG_RSP
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = REG_RT2
@@ -307,15 +307,15 @@ func autoeditaddr(ctxt *obj.Link, a *obj.Addr) *obj.Addr {
 		r.Reg = REG_RSP
 		r.Name = obj.NAME_NONE
 		if ctxt.Cursym.Text.From3Offset()&obj.NOFRAME != 0 {
-			r.Offset += MinStackFrameSize - StackBias
+			r.Offset += MinStackFrameSize + StackBias
 			return r
 		}
-		r.Offset += int64(ctxt.Cursym.Locals) + 2*MinStackFrameSize - StackBias
+		r.Offset += int64(ctxt.Cursym.Locals) + 2*MinStackFrameSize + StackBias
 		return r
 	}
 	if r.Name == obj.NAME_AUTO {
 		r.Reg = REG_RSP
-		r.Offset += int64(ctxt.Cursym.Locals) + MinStackFrameSize - StackBias
+		r.Offset += int64(ctxt.Cursym.Locals) + MinStackFrameSize + StackBias
 		r.Name = obj.NAME_NONE
 	}
 	return r
@@ -382,20 +382,20 @@ func biasfix(p *obj.Prog) {
 			}
 
 		case ClassReg | ClassBias:
-			// MOVD	BSP, R	-> ADD	-$STACK_BIAS, RSP, R
+			// MOVD	BSP, R	-> ADD	$STACK_BIAS, RSP, R
 			if aclass(p.Ctxt, &p.To) == ClassReg {
 				p.Reg = p.From.Reg - 256 // must match a.out.go:/REG_BSP
 				p.As = AADD
 				p.From.Reg = 0
-				p.From.Offset = -StackBias
+				p.From.Offset = StackBias
 				p.From.Type = obj.TYPE_CONST
 				p.From.Class = aclass(p.Ctxt, &p.From)
 			}
 
-		// MOVD	$off(BSP), R	-> MOVD	$(off-STACK_BIAS)(RSP), R
+		// MOVD	$off(BSP), R	-> MOVD	$(off+STACK_BIAS)(RSP), R
 		case ClassRegConst13 | ClassBias, ClassRegConst | ClassBias:
 			p.From.Reg -= 256 // must match a.out.go:/REG_BSP
-			p.From.Offset -= StackBias
+			p.From.Offset += StackBias
 			p.From.Class = aclass(p.Ctxt, &p.From)
 		}
 
@@ -412,17 +412,17 @@ func biasfix(p *obj.Prog) {
 		switch aclass(p.Ctxt, &p.From) {
 		case ClassZero, ClassReg, ClassFReg, ClassDReg:
 			switch {
-			// MOVD	R, off(BSP)	-> MOVD	R, (off-STACK_BIAS)(RSP)
+			// MOVD	R, off(BSP)	-> MOVD	R, (off+STACK_BIAS)(RSP)
 			case aclass(p.Ctxt, &p.To)&ClassBias != 0 && isAddrCompatible(p.Ctxt, &p.To, ClassIndir):
-				p.To.Offset -= StackBias
+				p.To.Offset += StackBias
 				p.To.Reg -= 256 // must match a.out.go:/REG_BSP
 				p.To.Class = aclass(p.Ctxt, &p.To)
 			}
 
-		// MOVD	off(BSP), R	-> MOVD	(off-STACK_BIAS)(RSP), R
+		// MOVD	off(BSP), R	-> MOVD	(off+STACK_BIAS)(RSP), R
 		case ClassIndir0 | ClassBias, ClassIndir13 | ClassBias, ClassIndir | ClassBias:
 			p.From.Reg -= 256 // must match a.out.go:/REG_BSP
-			p.From.Offset -= StackBias
+			p.From.Offset += StackBias
 			p.From.Class = aclass(p.Ctxt, &p.From)
 		}
 	}
@@ -643,23 +643,23 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				p = obj.Appendp(ctxt, p)
 				p.As = AFLUSHW
 
-				// MOVD RFP, (112-bias)(RSP)
+				// MOVD RFP, (112+bias)(RSP)
 				p = obj.Appendp(ctxt, p)
 				p.As = AMOVD
 				p.From.Type = obj.TYPE_REG
 				p.From.Reg = REG_RFP
 				p.To.Type = obj.TYPE_MEM
 				p.To.Reg = REG_RSP
-				p.To.Offset = int64(112 - StackBias)
+				p.To.Offset = int64(112 + StackBias)
 
-				// MOVD ILR, (120-bias)(RSP)
+				// MOVD ILR, (120+bias)(RSP)
 				p = obj.Appendp(ctxt, p)
 				p.As = AMOVD
 				p.From.Type = obj.TYPE_REG
 				p.From.Reg = REG_ILR
 				p.To.Type = obj.TYPE_MEM
 				p.To.Reg = REG_RSP
-				p.To.Offset = int64(120 - StackBias)
+				p.To.Offset = int64(120 + StackBias)
 			} else {
 				// ADD -(frameSize+MinStackFrameSize), RSP
 				p = obj.Appendp(ctxt, p)
@@ -679,14 +679,14 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				p.To.Type = obj.TYPE_REG
 				p.To.Reg = REG_RFP
 
-				// MOVD RFP, (112-bias)(RSP)
+				// MOVD RFP, (112+bias)(RSP)
 				p = obj.Appendp(ctxt, p)
 				p.As = AMOVD
 				p.From.Type = obj.TYPE_REG
 				p.From.Reg = REG_RFP
 				p.To.Type = obj.TYPE_MEM
 				p.To.Reg = REG_RSP
-				p.To.Offset = int64(112 - StackBias)
+				p.To.Offset = int64(112 + StackBias)
 
 				// MOVD OLR, ILR
 				p = obj.Appendp(ctxt, p)
@@ -696,14 +696,14 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				p.To.Type = obj.TYPE_REG
 				p.To.Reg = REG_ILR
 
-				// MOVD ILR, (120-bias)(RSP)
+				// MOVD ILR, (120+bias)(RSP)
 				p = obj.Appendp(ctxt, p)
 				p.As = AMOVD
 				p.From.Type = obj.TYPE_REG
 				p.From.Reg = REG_ILR
 				p.To.Type = obj.TYPE_MEM
 				p.To.Reg = REG_RSP
-				p.To.Offset = int64(120 - StackBias)
+				p.To.Offset = int64(120 + StackBias)
 
 				// MOVD 0, OLR
 				p = obj.Appendp(ctxt, p)
@@ -721,10 +721,10 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				//	CMP	ZR, L1
 				//	BED	end
 				//	MOVD	panic_argp(L1), L2
-				//	ADD	$(MinStackFrameSize-STACK_BIAS), RFP, L3
+				//	ADD	$(STACK_BIAS+MinStackFrameSize), RFP, L3
 				//	CMP	L2, L3
 				//	BNED	end
-				//	ADD	$(MinStackFrameSize-STACK_BIAS), RSP, L4
+				//	ADD	$(STACK_BIAS+MinStackFrameSize), RSP, L4
 				//	MOVD	L4, panic_argp(L1)
 				// end:
 				//	RNOP
@@ -760,7 +760,7 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				q = obj.Appendp(ctxt, q)
 				q.As = AADD
 				q.From.Type = obj.TYPE_CONST
-				q.From.Offset = MinStackFrameSize - StackBias
+				q.From.Offset = StackBias + MinStackFrameSize
 				q.Reg = REG_RFP
 				q.To.Type = obj.TYPE_REG
 				q.To.Reg = REG_L3
@@ -779,7 +779,7 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 				q = obj.Appendp(ctxt, q)
 				q.As = AADD
 				q.From.Type = obj.TYPE_CONST
-				q.From.Offset = MinStackFrameSize - StackBias
+				q.From.Offset = StackBias + MinStackFrameSize
 				q.Reg = REG_RSP
 				q.To.Type = obj.TYPE_REG
 				q.To.Reg = REG_L4
@@ -807,12 +807,12 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 			}
 
 			if isREGWIN(cursym.Text) {
-				// MOVD (112-bias)(RSP), RFP
+				// MOVD (112+bias)(RSP), RFP
 				q = obj.Appendp(ctxt, p)
 				p.As = AMOVD
 				p.From.Type = obj.TYPE_MEM
 				p.From.Reg = REG_RSP
-				p.From.Offset = int64(112 - StackBias)
+				p.From.Offset = int64(112 + StackBias)
 				p.To.Type = obj.TYPE_REG
 				p.To.Reg = REG_RFP
 
@@ -863,30 +863,30 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym) {
 			// pointer; otherwise a spill will overwrite the saved
 			// link register.
 
-			// MOVD (120-bias)(RSP), OLR
+			// MOVD (120+StackBias)(RSP), OLR
 			q1 = obj.Appendp(ctxt, q1)
 			q1.As = AMOVD
 			q1.From.Type = obj.TYPE_MEM
 			q1.From.Reg = REG_RSP
-			q1.From.Offset = 120 - StackBias
+			q1.From.Offset = 120 + StackBias
 			q1.To.Type = obj.TYPE_REG
 			q1.To.Reg = REG_OLR
 
-			// MOVD (120-bias)(RFP), ILR
+			// MOVD (120+StackBias)(RFP), ILR
 			q1 = obj.Appendp(ctxt, q1)
 			q1.As = AMOVD
 			q1.From.Type = obj.TYPE_MEM
 			q1.From.Reg = REG_RFP
-			q1.From.Offset = 120 - StackBias
+			q1.From.Offset = 120 + StackBias
 			q1.To.Type = obj.TYPE_REG
 			q1.To.Reg = REG_ILR
 
-			// MOVD (112-bias)(RFP), RFP
+			// MOVD (112+StackBias)(RFP), RFP
 			q1 = obj.Appendp(ctxt, q1)
 			q1.As = AMOVD
 			q1.From.Type = obj.TYPE_MEM
 			q1.From.Reg = REG_RFP
-			q1.From.Offset = 112 - StackBias
+			q1.From.Offset = 112 + StackBias
 			q1.To.Type = obj.TYPE_REG
 			q1.To.Reg = REG_RFP
 

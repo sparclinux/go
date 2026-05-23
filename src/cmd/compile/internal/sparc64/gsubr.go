@@ -417,11 +417,11 @@ func gmove(f *gc.Node, t *gc.Node) {
 		p1 := gins(sparc64.AFMOVD, &r2, nil)
 		p1.To.Type = obj.TYPE_MEM
 		p1.To.Reg = sparc64.REG_RSP
-		p1.To.Offset = -8 - sparc64.StackBias
+		p1.To.Offset = -8 + sparc64.StackBias
 		p1 = gins(sparc64.AMOVD, nil, &r3)
 		p1.From.Type = obj.TYPE_MEM
 		p1.From.Reg = sparc64.REG_RSP
-		p1.From.Offset = -8 - sparc64.StackBias
+		p1.From.Offset = -8 + sparc64.StackBias
 		gc.Regfree(&r2)
 		gc.Regfree(&r1)
 		if tt == gc.TUINT64 {
@@ -499,11 +499,11 @@ func gmove(f *gc.Node, t *gc.Node) {
 		p1 := gins(sparc64.AMOVD, &r1, nil)
 		p1.To.Type = obj.TYPE_MEM
 		p1.To.Reg = sparc64.REG_RSP
-		p1.To.Offset = -8 - sparc64.StackBias
+		p1.To.Offset = -8 + sparc64.StackBias
 		p1 = gins(sparc64.AFMOVD, nil, &r2)
 		p1.From.Type = obj.TYPE_MEM
 		p1.From.Reg = sparc64.REG_RSP
-		p1.From.Offset = -8 - sparc64.StackBias
+		p1.From.Offset = -8 + sparc64.StackBias
 		gins(sparc64.AFXTOD, &r2, &r2)
 		gc.Regfree(&r1)
 		if ft == gc.TUINT64 {

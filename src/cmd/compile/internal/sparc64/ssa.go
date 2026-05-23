@@ -565,11 +565,11 @@ func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
 		p.From.Reg = sparc64.REG_YTMP
 		p.To.Type = obj.TYPE_MEM
 		p.To.Reg = sparc64.REG_RSP
-		p.To.Offset = -8 - sparc64.StackBias
+		p.To.Offset = -8 + sparc64.StackBias
 		p = gc.Prog(loadByType(tt))
 		p.From.Type = obj.TYPE_MEM
 		p.From.Reg = sparc64.REG_RSP
-		p.From.Offset = -8 - sparc64.StackBias
+		p.From.Offset = -8 + sparc64.StackBias
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = r
 
@@ -637,11 +637,11 @@ func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
 		p.From.Reg = sparc64.REG_YTMP
 		p.To.Type = obj.TYPE_MEM
 		p.To.Reg = sparc64.REG_RSP
-		p.To.Offset = -8 - sparc64.StackBias
+		p.To.Offset = -8 + sparc64.StackBias
 		p = gc.Prog(loadByType(tt))
 		p.From.Type = obj.TYPE_MEM
 		p.From.Reg = sparc64.REG_RSP
-		p.From.Offset = -8 - sparc64.StackBias
+		p.From.Offset = -8 + sparc64.StackBias
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = r
 
@@ -679,13 +679,13 @@ func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
 		p.From.Reg = r1
 		p.To.Type = obj.TYPE_MEM
 		p.To.Reg = sparc64.REG_RSP
-		p.To.Offset = -8 - sparc64.StackBias
+		p.To.Offset = -8 + sparc64.StackBias
 		// Always load as single since FITOS/FITOD required the source
 		// to be a single.
 		p = gc.Prog(sparc64.AFMOVS)
 		p.From.Type = obj.TYPE_MEM
 		p.From.Reg = sparc64.REG_RSP
-		p.From.Offset = -8 - sparc64.StackBias
+		p.From.Offset = -8 + sparc64.StackBias
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = r
 		p = gc.Prog(v.Op.Asm())
@@ -754,13 +754,13 @@ func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
 		p.From.Reg = r1
 		p.To.Type = obj.TYPE_MEM
 		p.To.Reg = sparc64.REG_RSP
-		p.To.Offset = -8 - sparc64.StackBias
+		p.To.Offset = -8 + sparc64.StackBias
 		// Always load as double since FXTOS/FXTOD require the source
 		// to be a double.
 		p = gc.Prog(sparc64.AFMOVD)
 		p.From.Type = obj.TYPE_MEM
 		p.From.Reg = sparc64.REG_RSP
-		p.From.Offset = -8 - sparc64.StackBias
+		p.From.Offset = -8 + sparc64.StackBias
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = r
 		p = gc.Prog(v.Op.Asm())
@@ -810,7 +810,7 @@ func ssaGenValue(s *gc.SSAGenState, v *ssa.Value) {
 			// No sym, just MOVD $off(SP), R
 			wantreg = "SP"
 			p.From.Reg = sparc64.REG_RSP
-			p.From.Offset = v.AuxInt - sparc64.StackBias
+			p.From.Offset = v.AuxInt + sparc64.StackBias
 		}
 		if reg := gc.SSAReg(v.Args[0]); reg.Name() != wantreg {
 			v.Fatalf("bad reg %s for symbol type %T, want %s", reg.Name(), v.Aux, wantreg)

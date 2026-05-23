@@ -1692,7 +1692,7 @@ func asmout(p *obj.Prog, o Opval, cursym *obj.LSym) (out []uint32, err error) {
 
 	// RETRESTORE
 	case 51:
-		*o1 = opload(AMOVD) | rsr(REG_RSP, 120-StackBias, REG_ILR)
+		*o1 = opload(AMOVD) | rsr(REG_RSP, StackBias+120, REG_ILR)
 		*o2 = opcode(AJMPL) | rsr(REG_ILR, 8, REG_ZR)
 		*o3 = opalu(ARESTORE) | rsr(REG_ZR, 0, REG_ZR)
 
