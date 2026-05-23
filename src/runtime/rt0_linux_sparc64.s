@@ -6,9 +6,8 @@
 #include "asm_sparc64.h"
 
 TEXT _rt0_sparc64_linux(SB),NOSPLIT|NOFRAME,$0
-	MOVD	0(BSP), O0 // argc
-	MOVD	BSP, O1
-	ADD	$8, O1, O1 // argv
+	MOVD	WINDOW_SIZE+0(BSP), O0 // argc
+	MOVD	$(WINDOW_SIZE+8)(BSP), O1 // argv
 	MOVD	$main(SB), O3
 	JMPL	O3, ZR
 
