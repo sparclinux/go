@@ -98,7 +98,7 @@ func zerorange(p *obj.Prog, frame int64, lo int64, hi int64) *obj.Prog {
 		//	ADD	$8, RT1
 		//	CMP	RT1, RT2
 		//	BNED	loop
-		p = appendpp(p, sparc64.AADD, obj.TYPE_CONST, 0, int64(lo+sparc64.StackBias), obj.TYPE_REG, sparc64.REG_RT1, 0)
+		p = appendpp(p, sparc64.AADD, obj.TYPE_CONST, 0, int64(lo-sparc64.StackBias), obj.TYPE_REG, sparc64.REG_RT1, 0)
 		p.Reg = sparc64.REG_RFP
 		p = appendpp(p, sparc64.AADD, obj.TYPE_CONST, 0, cnt, obj.TYPE_REG, sparc64.REG_RT2, 0)
 		p.Reg = sparc64.REG_RT1
