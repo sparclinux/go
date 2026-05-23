@@ -17,6 +17,7 @@ TEXT ·Syscall(SB),NOSPLIT,$0-56
 	MOVD	trap+0(FP), RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	MOVD	$-1, L1
 	MOVD	L1, r1+32(FP)
 	MOVD	ZR, r2+40(FP)
@@ -42,6 +43,7 @@ TEXT ·Syscall6(SB),NOSPLIT,$0-80
 	MOVD	trap+0(FP), RT1
 	TA	$0x6d
 	BCCD	ok6
+	NOP
 	MOVD	$-1, L1
 	MOVD	L1, r1+56(FP)
 	MOVD	ZR, r2+64(FP)
@@ -63,6 +65,7 @@ TEXT ·RawSyscall(SB),NOSPLIT,$0-56
 	MOVD	trap+0(FP), RT1
 	TA	$0x6d
 	BCCD	ok1
+	NOP
 	MOVD	$-1, L1
 	MOVD	L1, r1+32(FP)
 	MOVD	ZR, r2+40(FP)
@@ -85,6 +88,7 @@ TEXT ·RawSyscall6(SB),NOSPLIT,$0-80
 	MOVD	trap+0(FP), RT1
 	TA	$0x6d
 	BCCD	ok2
+	NOP
 	MOVD	$-1, L1
 	MOVD	L1, r1+56(FP)
 	MOVD	ZR, r2+64(FP)

@@ -62,7 +62,8 @@ TEXT runtime·open(SB),NOSPLIT|REGWIN,$0-20
 	MOVW	$SYS_open, RT1
 	TA	$0x6d
 	BCCD	ok
-	MOVW	$-1, O0
+	NOP
+	NEG	O0, O0
 ok:
 	MOVW	O0, ret+16(FP)
 	RET
@@ -72,7 +73,8 @@ TEXT runtime·closefd(SB),NOSPLIT|REGWIN,$0-12
 	MOVW	$SYS_close, RT1
 	TA	$0x6d
 	BCCD	ok
-	MOVW	$-1, O0
+	NOP
+	NEG	O0, O0
 ok:
 	MOVW	O0, ret+8(FP)
 	RET
@@ -84,7 +86,8 @@ TEXT runtime·write(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	$SYS_write, RT1
 	TA	$0x6d
 	BCCD	ok
-	MOVW	$-1, O0
+	NOP
+	NEG	O0, O0
 ok:
 	MOVD	O0, ret+24(FP)
 	RET
@@ -96,7 +99,8 @@ TEXT runtime·read(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	$SYS_read, RT1
 	TA	$0x6d
 	BCCD	ok
-	MOVW	$-1, O0
+	NOP
+	NEG	O0, O0
 ok:
 	MOVD	O0, ret+24(FP)
 	RET
@@ -233,10 +237,12 @@ TEXT runtime·rt_sigaction(SB),NOSPLIT|REGWIN,$0-36
 	MOVD	sig+0(FP), O0
 	MOVD	new+8(FP), O1
 	MOVD	old+16(FP), O2
-	MOVD	size+24(FP), O3
+	MOVD	ZR, O3	// restorer (not used)
+	MOVD	size+24(FP), O4
 	MOVW	$SYS_rt_sigaction, RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	NEG	O0, O0
 ok:
 	MOVW	O0, ret+32(FP)
@@ -251,6 +257,7 @@ TEXT runtime·rtsigprocmask(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	$SYS_rt_sigprocmask, RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	NEG	O0, O0
 ok:
 	RET
@@ -286,6 +293,7 @@ TEXT runtime·sigaltstack(SB),NOSPLIT|REGWIN,$0-16
 	MOVW	$SYS_sigaltstack, RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	MOVD	ZR, (ZR)	// crash
 ok:
 	RET
@@ -301,6 +309,7 @@ TEXT runtime·mmap(SB),NOSPLIT|REGWIN,$0
 	MOVW	$SYS_mmap, RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	MOVD	$0, O1
 	MOVD	O1, ret+32(FP)
 	MOVD	O0, err+40(FP)
@@ -316,6 +325,7 @@ TEXT runtime·munmap(SB),NOSPLIT|REGWIN,$0
 	MOVW	$SYS_munmap, RT1
 	TA	$0x6d
 	BCCD	ok
+	NOP
 	MOVD	ZR, (ZR)	// crash
 ok:
 	RET
@@ -411,6 +421,7 @@ TEXT runtime·clone(SB),NOSPLIT|REGWIN,$0
 
 	// In parent, return.
 	BCCD	parent
+	NOP
 	// Error
 	NEG	O0, O0
 	MOVW	O0, ret+40(FP)
@@ -419,6 +430,7 @@ TEXT runtime·clone(SB),NOSPLIT|REGWIN,$0
 parent:
 	CMP	ZR, O0
 	BED	child
+	NOP
 	MOVW	O0, ret+40(FP)
 	RET
 
@@ -431,6 +443,7 @@ child:
 	MOVD	$1234, TMP
 	CMP	L1, TMP
 	BED	good
+	NOP
 	MOVD	ZR, (ZR) // crash
 
 good:
@@ -444,8 +457,10 @@ good:
 
 	CMP	ZR, L1
 	BED	nog
+	NOP
 	CMP	ZR, L2
 	BED	nog
+	NOP
 
 	MOVD	O0, m_procid(L1)
 
