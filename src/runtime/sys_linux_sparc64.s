@@ -41,21 +41,21 @@
 #define SYS_epoll_pwait 309
 #define SYS_fcntl 92
 #define SYS_tgkill 211
-#define SYS_mincore 218
+#define SYS_mincore 78
 
-TEXT runtime·exit(SB),NOSPLIT|REGWIN,$0-4
+TEXT runtime·exit(SB),NOSPLIT|NOFRAME,$0-4
 	MOVW	code+0(FP), O0
 	MOVW	$SYS_exit_group, RT1
 	TA	$0x6d
 	RET
 
-TEXT runtime·exit1(SB),NOSPLIT|REGWIN,$0-4
+TEXT runtime·exit1(SB),NOSPLIT|NOFRAME,$0-4
 	MOVW	code+0(FP), O0
 	MOVW	$SYS_exit, RT1
 	TA	$0x6d
 	RET
 
-TEXT runtime·open(SB),NOSPLIT|REGWIN,$0-20
+TEXT runtime·open(SB),NOSPLIT|NOFRAME,$0-20
 	MOVD	name+0(FP), O0
 	MOVW	mode+8(FP), O1
 	MOVW	perm+12(FP), O2
@@ -68,7 +68,7 @@ ok:
 	MOVW	O0, ret+16(FP)
 	RET
 
-TEXT runtime·closefd(SB),NOSPLIT|REGWIN,$0-12
+TEXT runtime·closefd(SB),NOSPLIT|NOFRAME,$0-12
 	MOVW	fd+0(FP), O0
 	MOVW	$SYS_close, RT1
 	TA	$0x6d
@@ -79,7 +79,7 @@ ok:
 	MOVW	O0, ret+8(FP)
 	RET
 
-TEXT runtime·write(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·write(SB),NOSPLIT|NOFRAME,$0-28
 	MOVD	fd+0(FP), O0
 	MOVD	p+8(FP), O1
 	MOVW	n+16(FP), O2
@@ -92,7 +92,7 @@ ok:
 	MOVD	O0, ret+24(FP)
 	RET
 
-TEXT runtime·read(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·read(SB),NOSPLIT|NOFRAME,$0-28
 	MOVW	fd+0(FP), O0
 	MOVD	p+8(FP), O1
 	MOVW	n+16(FP), O2
@@ -105,7 +105,7 @@ ok:
 	MOVD	O0, ret+24(FP)
 	RET
 
-TEXT runtime·getrlimit(SB),NOSPLIT|REGWIN,$0-20
+TEXT runtime·getrlimit(SB),NOSPLIT|NOFRAME,$0-20
 	MOVW	kind+0(FP), O0
 	MOVD	limit+8(FP), O1
 	MOVW	$144, RT1 // SYS_GETRLIMIT
@@ -113,34 +113,37 @@ TEXT runtime·getrlimit(SB),NOSPLIT|REGWIN,$0-20
 	MOVW	O0, ret+16(FP)
 	RET
 
-TEXT runtime·usleep(SB),NOSPLIT|REGWIN,$64
+TEXT runtime·usleep(SB),NOSPLIT,$16
 	MOVD	usec+0(FP), O0
 	MOVD	$1000000, O1
 	UDIVD	O1, O0, O2 // sec
 	MOVD	O2, O3
 	MULD	O1, O3, O4
 	SUB	O4, O0, O5 // usec
-	MOVD	O2, 32(BSP) // tv_sec
-	MULD	$1000, O5, O0
-	MOVD	O0, 40(BSP) // tv_nsec
+	// BSP is biased. Unbiased SP is BSP + 2047.
+	MOVD	BSP, L1
+	ADD	$2047, L1, L1
+	MOVD	O2, 0(L1) // tv_sec
+	MOVD	O5, O0
+	MULD	$1000, O0, O0
+	MOVD	O0, 8(L1) // tv_nsec
 
 	MOVD	$0, O0 // n
 	MOVD	$0, O1 // readfds
 	MOVD	$0, O2 // writefds
 	MOVD	$0, O3 // exceptfds
-	MOVD	BSP, O4
-	ADD	$32, O4, O4 // timeout
+	MOVD	L1, O4 // timeout
 	MOVW	$230, RT1 // SYS__NEWSELECT
 	TA	$0x6d
 	RET
 
-TEXT runtime·gettid(SB),NOSPLIT|REGWIN,$0-4
+TEXT runtime·gettid(SB),NOSPLIT|NOFRAME,$0-4
 	MOVW	$SYS_gettid, RT1
 	TA	$0x6d
 	MOVW	O0, ret+0(FP)
 	RET
 
-TEXT runtime·raise(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·raise(SB),NOSPLIT|NOFRAME,$0
 	MOVW	$SYS_getpid, RT1
 	TA	$0x6d
 	MOVW	O0, O0
@@ -152,7 +155,7 @@ TEXT runtime·raise(SB),NOSPLIT|REGWIN,$0
 	TA	$0x6d
 	RET
 
-TEXT runtime·raiseproc(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·raiseproc(SB),NOSPLIT|NOFRAME,$0
 	MOVW	$SYS_getpid, RT1
 	TA	$0x6d
 	MOVW	O0, O0
@@ -161,7 +164,7 @@ TEXT runtime·raiseproc(SB),NOSPLIT|REGWIN,$0
 	TA	$0x6d
 	RET
 
-TEXT runtime·setitimer(SB),NOSPLIT|REGWIN,$0-24
+TEXT runtime·setitimer(SB),NOSPLIT|NOFRAME,$0-24
 	MOVW	mode+0(FP), O0
 	MOVD	new+8(FP), O1
 	MOVD	old+16(FP), O2
@@ -169,7 +172,7 @@ TEXT runtime·setitimer(SB),NOSPLIT|REGWIN,$0-24
 	TA	$0x6d
 	RET
 
-TEXT runtime·mincore(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·mincore(SB),NOSPLIT|NOFRAME,$0-28
 	MOVD	addr+0(FP), O0
 	MOVD	n+8(FP), O1
 	MOVD	dst+16(FP), O2
@@ -178,35 +181,39 @@ TEXT runtime·mincore(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	O0, ret+24(FP)
 	RET
 
-TEXT runtime·walltime(SB),NOSPLIT|REGWIN,$64
+TEXT runtime·walltime(SB),NOSPLIT,$16
 	MOVW	$0, O0 // CLOCK_REALTIME
 	MOVD	BSP, O1
-	ADD	$32, O1, O1
+	ADD	$2047, O1, O1
 	MOVW	$SYS_clock_gettime, RT1
 	TA	$0x6d
 
-	MOVD	32(BSP), O0 // sec
-	MOVD	40(BSP), O1 // nsec
+	MOVD	BSP, L1
+	ADD	$2047, L1, L1
+	MOVD	0(L1), O0 // sec
+	MOVD	8(L1), O1 // nsec
 	MOVD	O0, sec+0(FP)
 	MOVW	O1, nsec+8(FP)
 	RET
 
-TEXT runtime·nanotime(SB),NOSPLIT|REGWIN,$64
+TEXT runtime·nanotime(SB),NOSPLIT,$16
 	MOVW	$1, O0 // CLOCK_MONOTONIC
 	MOVD	BSP, O1
-	ADD	$32, O1, O1
+	ADD	$2047, O1, O1
 	MOVW	$SYS_clock_gettime, RT1
 	TA	$0x6d
 
-	MOVD	32(BSP), O0 // sec
-	MOVD	40(BSP), O1 // nsec
+	MOVD	BSP, L1
+	ADD	$2047, L1, L1
+	MOVD	0(L1), O0 // sec
+	MOVD	8(L1), O1 // nsec
 	MOVD	$1000000000, O2
 	MULD	O2, O0
 	ADD	O1, O0
 	MOVD	O0, ret+0(FP)
 	RET
 
-TEXT runtime·futex(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·futex(SB),NOSPLIT|NOFRAME,$0-28
 	MOVD	addr+0(FP), O0
 	MOVW	op+8(FP), O1
 	MOVW	val+12(FP), O2
@@ -218,12 +225,12 @@ TEXT runtime·futex(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	O0, ret+36(FP)
 	RET
 
-TEXT runtime·osyield(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·osyield(SB),NOSPLIT|NOFRAME,$0
 	MOVW	$245, RT1 // SYS_SCHED_YIELD
 	TA	$0x6d
 	RET
 
-TEXT runtime·sched_getaffinity(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·sched_getaffinity(SB),NOSPLIT|NOFRAME,$0-28
 	MOVD	pid+0(FP), O0
 	MOVD	len+8(FP), O1
 	MOVD	buf+16(FP), O2
@@ -233,11 +240,11 @@ TEXT runtime·sched_getaffinity(SB),NOSPLIT|REGWIN,$0-28
 	RET
 
 // sigaction
-TEXT runtime·rt_sigaction(SB),NOSPLIT|REGWIN,$0-36
+TEXT runtime·rt_sigaction(SB),NOSPLIT|NOFRAME,$0-36
 	MOVD	sig+0(FP), O0
 	MOVD	new+8(FP), O1
 	MOVD	old+16(FP), O2
-	MOVD	ZR, O3	// restorer (not used)
+	MOVD	ZR, O3	// restorer
 	MOVD	size+24(FP), O4
 	MOVW	$SYS_rt_sigaction, RT1
 	TA	$0x6d
@@ -249,7 +256,7 @@ ok:
 	RET
 
 // sigprocmask
-TEXT runtime·rtsigprocmask(SB),NOSPLIT|REGWIN,$0-28
+TEXT runtime·rtsigprocmask(SB),NOSPLIT|NOFRAME,$0-28
 	MOVW	how+0(FP), O0
 	MOVD	new+8(FP), O1
 	MOVD	old+16(FP), O2
@@ -262,7 +269,7 @@ TEXT runtime·rtsigprocmask(SB),NOSPLIT|REGWIN,$0-28
 ok:
 	RET
 
-TEXT runtime·sigfwd(SB),NOSPLIT|REGWIN,$0-32
+TEXT runtime·sigfwd(SB),NOSPLIT|NOFRAME,$0-32
 	MOVD	sig+8(FP), O0
 	MOVD	info+16(FP), O1
 	MOVD	ctx+24(FP), O2
@@ -270,14 +277,25 @@ TEXT runtime·sigfwd(SB),NOSPLIT|REGWIN,$0-32
 	CALL	(L1)
 	RET
 
-TEXT runtime·sigtramp(SB),NOSPLIT|REGWIN,$64
-	MOVD	I0, O0
-	MOVD	I1, O1
-	MOVD	I2, O2
+TEXT runtime·sigtramp(SB),NOSPLIT|REGWIN,$128
+	// Save RT1 (g1) since it's clobbered by load_g
+	MOVD	RT1, L1
+	CALL	runtime·load_g(SB)
+
+	// sig, info, ctxt are in I0, I1, I2 after SAVE.
+	// Callee's args on stack: (176+Offset) unbiased.
+	MOVD	BSP, L2
+	ADD	$2047, L2, L2
+	MOVD	I0, 0(L2)
+	MOVD	I1, 8(L2)
+	MOVD	I2, 16(L2)
 	CALL	runtime·sigtrampgo(SB)
+
+	// Restore RT1
+	MOVD	L1, RT1
 	RET
 
-TEXT runtime·cgoSigtramp(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·cgoSigtramp(SB),NOSPLIT|NOFRAME,$0
 	JMP	runtime·sigtramp(SB)
 
 // sigreturn
@@ -287,7 +305,7 @@ TEXT runtime·sigreturn(SB),NOSPLIT|NOFRAME,$0
 	RET
 
 // sigaltstack
-TEXT runtime·sigaltstack(SB),NOSPLIT|REGWIN,$0-16
+TEXT runtime·sigaltstack(SB),NOSPLIT|NOFRAME,$0-16
 	MOVD	new+0(FP), O0
 	MOVD	old+8(FP), O1
 	MOVW	$SYS_sigaltstack, RT1
@@ -299,7 +317,7 @@ ok:
 	RET
 
 // mmap
-TEXT runtime·mmap(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·mmap(SB),NOSPLIT|NOFRAME,$0
 	MOVD	addr+0(FP), O0
 	MOVD	n+8(FP), O1
 	MOVW	prot+16(FP), O2
@@ -319,7 +337,7 @@ ok:
 	MOVD	$0, err+40(FP)
 	RET
 
-TEXT runtime·munmap(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·munmap(SB),NOSPLIT|NOFRAME,$0
 	MOVD	addr+0(FP), O0
 	MOVD	n+8(FP), O1
 	MOVW	$SYS_munmap, RT1
@@ -330,7 +348,7 @@ TEXT runtime·munmap(SB),NOSPLIT|REGWIN,$0
 ok:
 	RET
 
-TEXT runtime·madvise(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·madvise(SB),NOSPLIT|NOFRAME,$0
 	MOVD	addr+0(FP), O0
 	MOVD	n+8(FP), O1
 	MOVW	flags+16(FP), O2
@@ -339,21 +357,21 @@ TEXT runtime·madvise(SB),NOSPLIT|REGWIN,$0
 	RET
 
 // epoll
-TEXT runtime·epollcreate(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·epollcreate(SB),NOSPLIT|NOFRAME,$0
 	MOVW	size+0(FP), O0
 	MOVW	$193, RT1 // SYS_EPOLL_CREATE
 	TA	$0x6d
 	MOVW	O0, ret+8(FP)
 	RET
 
-TEXT runtime·epollcreate1(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·epollcreate1(SB),NOSPLIT|NOFRAME,$0
 	MOVW	flags+0(FP), O0
 	MOVW	$SYS_epoll_create1, RT1
 	TA	$0x6d
 	MOVW	O0, ret+8(FP)
 	RET
 
-TEXT runtime·epollctl(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·epollctl(SB),NOSPLIT|NOFRAME,$0
 	MOVW	epfd+0(FP), O0
 	MOVW	op+4(FP), O1
 	MOVW	fd+8(FP), O2
@@ -363,7 +381,7 @@ TEXT runtime·epollctl(SB),NOSPLIT|REGWIN,$0
 	MOVW	O0, ret+24(FP)
 	RET
 
-TEXT runtime·epollwait(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·epollwait(SB),NOSPLIT|NOFRAME,$0
 	MOVW	epfd+0(FP), O0
 	MOVD	ev+8(FP), O1
 	MOVW	nev+16(FP), O2
@@ -373,7 +391,7 @@ TEXT runtime·epollwait(SB),NOSPLIT|REGWIN,$0
 	MOVW	O0, ret+24(FP)
 	RET
 
-TEXT runtime·epollpwait(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·epollpwait(SB),NOSPLIT|NOFRAME,$0
 	MOVW	epfd+0(FP), O0
 	MOVD	ev+8(FP), O1
 	MOVW	nev+16(FP), O2
@@ -385,7 +403,7 @@ TEXT runtime·epollpwait(SB),NOSPLIT|REGWIN,$0
 	RET
 
 // closeonexec
-TEXT runtime·closeonexec(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·closeonexec(SB),NOSPLIT|NOFRAME,$0
 	MOVW	fd+0(FP), O0
 	MOVW	$2, O1 // F_SETFD
 	MOVW	$1, O2 // FD_CLOEXEC
@@ -394,7 +412,7 @@ TEXT runtime·closeonexec(SB),NOSPLIT|REGWIN,$0
 	RET
 
 // int64 clone(int32 flags, void *stk, M *mp, G *gp, void (*fn)(void));
-TEXT runtime·clone(SB),NOSPLIT|REGWIN,$0
+TEXT runtime·clone(SB),NOSPLIT|NOFRAME,$0
 	MOVW	flags+0(FP), O0
 	MOVD	stk+8(FP), O1
 
@@ -420,6 +438,11 @@ TEXT runtime·clone(SB),NOSPLIT|REGWIN,$0
 	TA	$0x6d
 
 	// In parent, return.
+	// On SPARC, O1 is 0 in parent, 1 in child.
+	CMP	ZR, O1
+	BNED	child
+	NOP
+
 	BCCD	parent
 	NOP
 	// Error
@@ -428,18 +451,20 @@ TEXT runtime·clone(SB),NOSPLIT|REGWIN,$0
 	RET
 
 parent:
-	CMP	ZR, O0
-	BED	child
-	NOP
 	MOVW	O0, ret+40(FP)
 	RET
 
 child:
 	// In child, on new stack.
+	FLUSHW
 	CALL	runtime·reginit(SB)
 
 	// BSP is now the new stack pointer.
-	MOVD	FIXED_FRAME-32(BSP), L1
+	// Use L1 to calculate unbiased address.
+	MOVD	BSP, L1
+	ADD	$2047, L1, L1
+	// offset from unbiased SP is FIXED_FRAME - 32.
+	MOVD	(176-32)(L1), L1
 	MOVD	$1234, TMP
 	CMP	L1, TMP
 	BED	good
@@ -451,9 +476,11 @@ good:
 	TA	$0x6d
 	// O0 is tid
 
-	MOVD	FIXED_FRAME-24(BSP), L3 // fn
-	MOVD	FIXED_FRAME-16(BSP), L2 // g
-	MOVD	FIXED_FRAME-8(BSP), L1  // m
+	MOVD	BSP, L1
+	ADD	$2047, L1, L1
+	MOVD	(176-24)(L1), L3 // fn
+	MOVD	(176-16)(L1), L2 // g
+	MOVD	(176-8)(L1), L1  // m
 
 	CMP	ZR, L1
 	BED	nog

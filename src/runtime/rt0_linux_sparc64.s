@@ -6,8 +6,16 @@
 #include "asm_sparc64.h"
 
 TEXT _rt0_sparc64_linux(SB),NOSPLIT|NOFRAME,$0
-	MOVD	WINDOW_SIZE+0(BSP), O0 // argc
-	MOVD	$(WINDOW_SIZE+8)(BSP), O1 // argv
+	// On SPARC64 Linux, the stack pointer %sp is biased by 2047.
+	// The unbiased address of argc is %sp + 2047 + 128 (window save area).
+	// We use O0 to calculate the unbiased address first.
+	// BSP is R14 (%o6).
+	MOVD	BSP, O0
+	ADD	$2047, O0, O0
+	MOVD	128(O0), O0 // argc
+	MOVD	BSP, O1
+	ADD	$2047, O1, O1
+	ADD	$136, O1, O1 // argv (128 + 8)
 	MOVD	$main(SB), O3
 	JMPL	O3, ZR
 
