@@ -31,25 +31,26 @@ func (c *sigctxt) r13() uint64 { return c.regs().u_regs[13] }
 func (c *sigctxt) r14() uint64 { return c.regs().u_regs[14] }
 func (c *sigctxt) r15() uint64 { return c.regs().u_regs[15] }
 
-// On SPARC, R16-R31 are local and in registers, they are usually
-// saved on the stack. The sigcontext contains a pointer to the
-// saved register window.
-func (c *sigctxt) r16() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 0)) }
-func (c *sigctxt) r17() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 8)) }
-func (c *sigctxt) r18() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 16)) }
-func (c *sigctxt) r19() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 24)) }
-func (c *sigctxt) r20() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 32)) }
-func (c *sigctxt) r21() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 40)) }
-func (c *sigctxt) r22() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 48)) }
-func (c *sigctxt) r23() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 56)) }
-func (c *sigctxt) r24() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 64)) }
-func (c *sigctxt) r25() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 72)) }
-func (c *sigctxt) r26() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 80)) }
-func (c *sigctxt) r27() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 88)) }
-func (c *sigctxt) r28() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 96)) }
-func (c *sigctxt) r29() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 104)) }
-func (c *sigctxt) r30() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 112)) }
-func (c *sigctxt) r31() uint64 { return *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 120)) }
+// On SPARC Linux, the register window save area is at the beginning of the
+// stack frame. When a signal occurs, the kernel might NOT save the
+// local and in registers to the ucontext if it's a simple trap.
+// However, for rt_sigaction, they should be on the stack.
+func (c *sigctxt) r16() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 0))) }
+func (c *sigctxt) r17() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 8))) }
+func (c *sigctxt) r18() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 16))) }
+func (c *sigctxt) r19() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 24))) }
+func (c *sigctxt) r20() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 32))) }
+func (c *sigctxt) r21() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 40))) }
+func (c *sigctxt) r22() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 48))) }
+func (c *sigctxt) r23() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 56))) }
+func (c *sigctxt) r24() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 64))) }
+func (c *sigctxt) r25() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 72))) }
+func (c *sigctxt) r26() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 80))) }
+func (c *sigctxt) r27() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 88))) }
+func (c *sigctxt) r28() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 96))) }
+func (c *sigctxt) r29() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 104))) }
+func (c *sigctxt) r30() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 112))) }
+func (c *sigctxt) r31() uint64 { return *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 120))) }
 
 func (c *sigctxt) sp() uint64     { return c.regs().u_regs[14] + 0x7ff }
 func (c *sigctxt) lr() uint64     { return c.regs().u_regs[15] }
@@ -57,7 +58,7 @@ func (c *sigctxt) pc() uint64     { return c.regs().tpc }
 func (c *sigctxt) npc() uint64    { return c.regs().tnpc }
 func (c *sigctxt) tstate() uint64 { return c.regs().tstate }
 func (c *sigctxt) y() uint32      { return c.regs().y }
-func (c *sigctxt) fprs() uint32   { return c.regs().fprs }
+func (c *sigctxt) fprs() uint32   { return 0 } // Not in pt_regs
 func (c *sigctxt) fp() uint64     { return c.r30() + 0x7ff }
 func (c *sigctxt) fault() uint64  { return c.sigaddr() }
 
@@ -71,7 +72,7 @@ func (c *sigctxt) set_npc(x uint64) { c.regs().tnpc = x }
 func (c *sigctxt) set_sp(x uint64)  { c.regs().u_regs[14] = x - 0x7ff }
 func (c *sigctxt) set_lr(x uint64)  { c.regs().u_regs[15] = x }
 func (c *sigctxt) set_g(x uint64)   { c.regs().u_regs[3] = x }
-func (c *sigctxt) set_fp(x uint64)  { *(*uint64)(unsafe.Pointer(c.regs().rwin_save + 112)) = x - 0x7ff }
+func (c *sigctxt) set_fp(x uint64)  { *(*uint64)(unsafe.Pointer(uintptr(c.sp() + 112))) = x - 0x7ff }
 func (c *sigctxt) set_r3(x uint64)  { c.regs().u_regs[3] = x }
 
 func (c *sigctxt) set_sigaddr(x uint64) {

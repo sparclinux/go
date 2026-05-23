@@ -114,9 +114,9 @@ func (tv *timeval) set_usec(x int32) {
 
 type sigactiont struct {
 	sa_handler  uintptr
-	sa_mask     uint64
 	sa_flags    uint64
 	sa_restorer uintptr
+	sa_mask     uint64
 }
 
 type siginfo struct {
@@ -152,27 +152,18 @@ type sigaltstackt struct {
 }
 
 type sigcontext struct {
-	si_info		[128]int8
 	u_regs		[16]uint64
 	tstate		uint64
 	tpc		uint64
 	tnpc		uint64
 	y		uint32
-	fprs		uint32
-	fpu_save	uintptr
-	ss_sp		uintptr
-	ss_flags	int32
-	pad_cgo_0	[4]byte
-	ss_size		uintptr
-	sig_mask	uint64
-	rwin_save	uintptr
+	magic		uint32
 }
 
 type ucontext struct {
-	uc_link		*ucontext
 	uc_flags	uint64
-	uc_sigmask	uint64
-	pad_cgo_0	[8]byte
-	uc_mcontext	sigcontext
+	uc_link		*ucontext
 	uc_stack	sigaltstackt
+	uc_mcontext	sigcontext
+	uc_sigmask	uint64
 }
