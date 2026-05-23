@@ -236,6 +236,9 @@ TEXT runtime·rt_sigaction(SB),NOSPLIT|REGWIN,$0-36
 	MOVD	size+24(FP), O3
 	MOVW	$SYS_rt_sigaction, RT1
 	TA	$0x6d
+	BCCD	ok
+	NEG	O0, O0
+ok:
 	MOVW	O0, ret+32(FP)
 	RET
 
@@ -248,7 +251,7 @@ TEXT runtime·rtsigprocmask(SB),NOSPLIT|REGWIN,$0-28
 	MOVW	$SYS_rt_sigprocmask, RT1
 	TA	$0x6d
 	BCCD	ok
-	MOVD	ZR, (ZR)	// crash
+	NEG	O0, O0
 ok:
 	RET
 

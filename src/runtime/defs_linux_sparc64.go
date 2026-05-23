@@ -113,10 +113,10 @@ func (tv *timeval) set_usec(x int32) {
 }
 
 type sigactiont struct {
-        sa_handler  uintptr
-        sa_flags    uint64
-        sa_restorer uintptr
-        sa_mask     uint64
+	sa_handler  uintptr
+	sa_mask     uint64
+	sa_flags    uint64
+	sa_restorer uintptr
 }
 
 type siginfo struct {
