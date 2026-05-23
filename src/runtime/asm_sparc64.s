@@ -321,7 +321,7 @@ TEXT runtime·morestack(SB),NOSPLIT|NOFRAME,$0-0
 	// runtime.abort
 	MOVD	$runtime·abort(SB), OLR
 	MOVD	OLR, 120(BSP)
-	JMP	runtime·threaddump(SB)
+	JMP	runtime·abort(SB)
 	JMPL	ZR, ZR
 
 	// Cannot grow signal stack (m->gsignal).
@@ -1117,8 +1117,6 @@ TEXT runtime·prefetcht2(SB),NOSPLIT|NOFRAME,$0-8
 TEXT runtime·prefetchnta(SB),NOSPLIT|NOFRAME,$0-8
 	RET
 
-TEXT runtime·sigreturn(SB),NOSPLIT|NOFRAME,$0-8
-	RET
 
 // This is called from .init_array and follows the platform, not Go, ABI.
 TEXT runtime·addmoduledata(SB),NOSPLIT,$0-0

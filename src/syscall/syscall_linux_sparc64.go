@@ -4,11 +4,11 @@
 
 // +build sparc64,linux
 
-package unix
+package syscall
 
-import (
-	"sync/atomic"
-	"syscall"
+const (
+	_SYS_dup      = SYS_DUP2
+	_SYS_getdents = SYS_GETDENTS64
 )
 
 //sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
@@ -63,20 +63,7 @@ import (
 //sys	sendmsg(s int, msg *Msghdr, flags int) (n int, err error)
 //sys	mmap(addr uintptr, length uintptr, prot int, flags int, fd int, offset int64) (xaddr uintptr, err error)
 
-func sysconf(name int) (n int64, err syscall.Errno)
-
-// pageSize caches the value of Getpagesize, since it can't change
-// once the system is booted.
-var pageSize int64 // accessed atomically
-
-func Getpagesize() int {
-	n := atomic.LoadInt64(&pageSize)
-	if n == 0 {
-		n, _ = sysconf(_SC_PAGESIZE)
-		atomic.StoreInt64(&pageSize, n)
-	}
-	return int(n)
-}
+func sysconf(name int) (n int64, err Errno)
 
 func Ioperm(from int, num int, on int) (err error) {
 	return ENOSYS
@@ -113,7 +100,7 @@ func NsecToTimespec(nsec int64) (ts Timespec) {
 func NsecToTimeval(nsec int64) (tv Timeval) {
 	nsec += 999 // round up to microsecond
 	tv.Sec = nsec / 1e9
-	tv.Usec = int32(nsec % 1e9 / 1e3)
+	tv.Usec = int64(nsec % 1e9 / 1e3)
 	return
 }
 

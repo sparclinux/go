@@ -2,7 +2,7 @@
 // Created by cgo -godefs - DO NOT EDIT
 // cgo -godefs types_linux.go | go run mkpost.go
 
-package unix
+package syscall
 
 const (
 	sizeofPtr      = 0x8
@@ -26,9 +26,8 @@ type Timespec struct {
 }
 
 type Timeval struct {
-	Sec       int64
-	Usec      int32
-	Pad_cgo_0 [4]byte
+	Sec  int64
+	Usec int64
 }
 
 type Timex struct {
@@ -608,10 +607,10 @@ type EpollEvent struct {
 }
 
 const (
-	AT_FDCWD            = -0x64
-	AT_REMOVEDIR        = 0x200
-	AT_SYMLINK_FOLLOW   = 0x400
-	AT_SYMLINK_NOFOLLOW = 0x100
+	_AT_FDCWD            = -0x64
+	_AT_REMOVEDIR        = 0x200
+	_AT_SYMLINK_FOLLOW   = 0x400
+	_AT_SYMLINK_NOFOLLOW = 0x100
 )
 
 type PollFd struct {

@@ -71,7 +71,7 @@ func linkarchinit() {
 	ld.Thearch.Append32 = ld.Append32b
 	ld.Thearch.Append64 = ld.Append64b
 
-	ld.Thearch.Linuxdynld = "XXX"
+	ld.Thearch.Linuxdynld = "/lib64/ld-linux.so.2"
 	ld.Thearch.Freebsddynld = "XXX"
 	ld.Thearch.Openbsddynld = "XXX"
 	ld.Thearch.Netbsddynld = "XXX"

@@ -18,6 +18,8 @@ const (
 	_MAP_FIXED = 0x10
 
 	_MADV_DONTNEED = 0x4
+	_MADV_HUGEPAGE = 0xe
+	_MADV_NOHUGEPAGE = 0xf
 
 	_SA_RESTART = 0x2
 	_SA_ONSTACK = 0x1
@@ -79,7 +81,7 @@ const (
 	_EPOLLERR = 0x8
 	_EPOLLHUP = 0x10
 	_EPOLLRDHUP = 0x2000
-	_EPOLLET = -0x80000000
+	_EPOLLET = 0x80000000
 	_EPOLL_CLOEXEC = 0x400000
 	_EPOLL_CTL_ADD = 0x1
 	_EPOLL_CTL_DEL = 0x2
@@ -107,7 +109,7 @@ type timeval struct {
 }
 
 func (tv *timeval) set_usec(x int32) {
-        tv.tv_usec = int64(x)
+        tv.tv_usec = x
 }
 
 type sigactiont struct {
@@ -149,80 +151,28 @@ type sigaltstackt struct {
 	ss_size		uintptr
 }
 
+type sigcontext struct {
+	si_info		[128]int8
+	u_regs		[16]uint64
+	tstate		uint64
+	tpc		uint64
+	tnpc		uint64
+	y		uint32
+	fprs		uint32
+	fpu_save	uintptr
+	ss_sp		uintptr
+	ss_flags	int32
+	pad_cgo_0	[4]byte
+	ss_size		uintptr
+	sig_mask	uint64
+	rwin_save	uintptr
+}
+
 type ucontext struct {
 	uc_link		*ucontext
 	uc_flags	uint64
-	__uc_sigmask	uint64
+	uc_sigmask	uint64
 	pad_cgo_0	[8]byte
 	uc_mcontext	sigcontext
 	uc_stack	sigaltstackt
-	uc_sigmask	uint64
-	pad_cgo_1	[8]byte
-}
-
-/*
-
-From C header:
-
-typedef struct {
-        int                     wsaved;
-        __siginfo_reg_window    reg_window[__SIGC_MAXWIN];
-        unsigned long           rwbuf_stkptrs[__SIGC_MAXWIN];
-} __siginfo_rwin_t;
-
-#ifdef CONFIG_SPARC64
-typedef struct {
-        unsigned   int si_float_regs [64];
-        unsigned   long si_fsr;
-        unsigned   long si_gsr;
-        unsigned   long si_fprs;
-} __siginfo_fpu_t;
-
-/* This is what SunOS doesn't, so we have to write this alone
-   and do it properly. */
-struct sigcontext {
-        /* The size of this array has to match SI_MAX_SIZE from siginfo.h */
-        char                    sigc_info[128];
-        struct {
-                unsigned long   u_regs[16]; /* globals and ins */
-                unsigned long   tstate;
-                unsigned long   tpc;
-                unsigned long   tnpc;
-                unsigned int    y;
-                unsigned int    fprs;
-        }                       sigc_regs;
-        __siginfo_fpu_t *       sigc_fpu_save;
-        struct {
-                void    *       ss_sp;
-                int             ss_flags;
-                unsigned long   ss_size;
-        }                       sigc_stack;
-        unsigned long           sigc_mask;
-        __siginfo_rwin_t *      sigc_rwin_save;
-};
-
-*/
-
-/* Unused:
-
-type Usigset struct {
-	X__val [16]uint64
-}
-type Fpxreg struct{}
-type Xmmreg struct{}
-type Fpstate struct{}
-type Fpxreg1 struct{}
-type Xmmreg1 struct{}
-type Fpstate1 struct{}
-type Fpreg1 struct{}
-
-*/
-
-// TODO:
-type sigcontext struct {
-	Info		[128]int8
-	Regs		_Ctype_struct___4
-	Fpu_save	*_Ctype_struct___6
-	Stack		_Ctype_struct___5
-	Mask		uint64
 }
