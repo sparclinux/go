@@ -121,8 +121,8 @@ type sigactiont struct {
 
 type siginfo struct {
 	si_signo	int32
-	si_errno	int32
 	si_code		int32
+	si_errno	int32
 	pad_cgo_0	[4]byte
 	X_sifields	[112]byte
 }

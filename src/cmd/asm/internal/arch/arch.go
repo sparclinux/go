@@ -487,6 +487,7 @@ func archSparc64() *Arch {
 	// Note that there is no list of names as there is for 386 and amd64.
 	for i := sparc64.REG_G0; i <= sparc64.REG_I7; i++ {
 		register[sparc64.Rconv(i)] = int16(i)
+		register[fmt.Sprintf("R%d", i-sparc64.REG_G0)] = int16(i)
 	}
 	for i := sparc64.REG_F0; i <= sparc64.REG_F31; i++ {
 		register[sparc64.Rconv(i)] = int16(i)

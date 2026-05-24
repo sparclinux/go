@@ -480,7 +480,7 @@ func rrr(rs1, imm_asi, rs2, rd int16) uint32 {
 }
 
 func rsr(rs1 int16, simm13 int64, rd int16) uint32 {
-	return uint32(int(rd)&31<<25 | int(rs1)&31<<14 | 1<<13 | int(simm13)&(1<<14-1))
+	return uint32(int(rd)&31<<25 | int(rs1)&31<<14 | 1<<13 | int(simm13)&(1<<13-1))
 }
 
 func rd(r int16) uint32 {

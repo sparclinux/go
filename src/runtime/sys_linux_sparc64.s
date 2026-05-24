@@ -120,19 +120,18 @@ TEXT runtime·usleep(SB),NOSPLIT,$16
 	MOVD	O2, O3
 	MULD	O1, O3, O4
 	SUB	O4, O0, O5 // usec
-	// BSP is biased. Unbiased SP is BSP + 2047.
-	MOVD	BSP, L1
-	ADD	$2047, L1, L1
-	MOVD	O2, 0(L1) // tv_sec
+	// use local area (offset 176)
+	MOVD	O2, 176(BSP) // tv_sec
 	MOVD	O5, O0
 	MULD	$1000, O0, O0
-	MOVD	O0, 8(L1) // tv_nsec
+	MOVD	O0, 184(BSP) // tv_nsec
 
 	MOVD	$0, O0 // n
 	MOVD	$0, O1 // readfds
 	MOVD	$0, O2 // writefds
 	MOVD	$0, O3 // exceptfds
-	MOVD	L1, O4 // timeout
+	MOVD	BSP, O4
+	ADD	$176, O4, O4 // timeout pointer
 	MOVW	$230, RT1 // SYS__NEWSELECT
 	TA	$0x6d
 	RET
@@ -184,14 +183,12 @@ TEXT runtime·mincore(SB),NOSPLIT|NOFRAME,$0-28
 TEXT runtime·walltime(SB),NOSPLIT,$16
 	MOVW	$0, O0 // CLOCK_REALTIME
 	MOVD	BSP, O1
-	ADD	$2047, O1, O1
+	ADD	$176, O1, O1 // timespec pointer in local area
 	MOVW	$SYS_clock_gettime, RT1
 	TA	$0x6d
 
-	MOVD	BSP, L1
-	ADD	$2047, L1, L1
-	MOVD	0(L1), O0 // sec
-	MOVD	8(L1), O1 // nsec
+	MOVD	176(BSP), O0 // sec
+	MOVD	184(BSP), O1 // nsec
 	MOVD	O0, sec+0(FP)
 	MOVW	O1, nsec+8(FP)
 	RET
@@ -199,14 +196,12 @@ TEXT runtime·walltime(SB),NOSPLIT,$16
 TEXT runtime·nanotime(SB),NOSPLIT,$16
 	MOVW	$1, O0 // CLOCK_MONOTONIC
 	MOVD	BSP, O1
-	ADD	$2047, O1, O1
+	ADD	$176, O1, O1 // timespec pointer in local area
 	MOVW	$SYS_clock_gettime, RT1
 	TA	$0x6d
 
-	MOVD	BSP, L1
-	ADD	$2047, L1, L1
-	MOVD	0(L1), O0 // sec
-	MOVD	8(L1), O1 // nsec
+	MOVD	176(BSP), O0 // sec
+	MOVD	184(BSP), O1 // nsec
 	MOVD	$1000000000, O2
 	MULD	O2, O0
 	ADD	O1, O0
@@ -279,20 +274,19 @@ TEXT runtime·sigfwd(SB),NOSPLIT|NOFRAME,$0-32
 
 TEXT runtime·sigtramp(SB),NOSPLIT|REGWIN,$128
 	// Save RT1 (g1) since it's clobbered by load_g
-	MOVD	RT1, L1
+	// R16 is %l0 after SAVE.
+	MOVD	RT1, R16
 	CALL	runtime·load_g(SB)
 
 	// sig, info, ctxt are in I0, I1, I2 after SAVE.
-	// Callee's args on stack: (176+Offset) unbiased.
-	MOVD	BSP, L2
-	ADD	$2047, L2, L2
-	MOVD	I0, 0(L2)
-	MOVD	I1, 8(L2)
-	MOVD	I2, 16(L2)
+	// Arguments area of sigtramp starts at 176(BSP).
+	MOVD	I0, 176(BSP)
+	MOVD	I1, 184(BSP)
+	MOVD	I2, 192(BSP)
 	CALL	runtime·sigtrampgo(SB)
 
 	// Restore RT1
-	MOVD	L1, RT1
+	MOVD	R16, RT1
 	RET
 
 TEXT runtime·cgoSigtramp(SB),NOSPLIT|NOFRAME,$0
@@ -421,15 +415,15 @@ TEXT runtime·clone(SB),NOSPLIT|NOFRAME,$0
 	MOVD	gp+24(FP), L2
 	MOVD	fn+32(FP), L3
 
-	// O1 is the top of the stack.
+	// O1 is the top of the stack. (Unbiased)
 	// We need to leave space for the window and arguments.
 	SUB	$FIXED_FRAME, O1, O1
 
-	MOVD	L1, FIXED_FRAME-8(O1)
-	MOVD	L2, FIXED_FRAME-16(O1)
-	MOVD	L3, FIXED_FRAME-24(O1)
+	MOVD	L1, (FIXED_FRAME-8)(O1)
+	MOVD	L2, (FIXED_FRAME-16)(O1)
+	MOVD	L3, (FIXED_FRAME-24)(O1)
 	MOVD	$1234, L1
-	MOVD	L1, FIXED_FRAME-32(O1)
+	MOVD	L1, (FIXED_FRAME-32)(O1)
 
 	// Subtract STACK_BIAS for the syscall
 	SUB	$STACK_BIAS, O1, O1
@@ -459,12 +453,9 @@ child:
 	FLUSHW
 	CALL	runtime·reginit(SB)
 
-	// BSP is now the new stack pointer.
-	// Use L1 to calculate unbiased address.
-	MOVD	BSP, L1
-	ADD	$2047, L1, L1
-	// offset from unbiased SP is FIXED_FRAME - 32.
-	MOVD	(176-32)(L1), L1
+	// BSP is now the new stack pointer (unbiased).
+	// (FIXED_FRAME-32) = 144.
+	MOVD	144(BSP), L1
 	MOVD	$1234, TMP
 	CMP	L1, TMP
 	BED	good
@@ -476,11 +467,10 @@ good:
 	TA	$0x6d
 	// O0 is tid
 
-	MOVD	BSP, L1
-	ADD	$2047, L1, L1
-	MOVD	(176-24)(L1), L3 // fn
-	MOVD	(176-16)(L1), L2 // g
-	MOVD	(176-8)(L1), L1  // m
+	// fn: 152, g: 160, m: 168
+	MOVD	152(BSP), L3 // fn
+	MOVD	160(BSP), L2 // g
+	MOVD	168(BSP), L1 // m
 
 	CMP	ZR, L1
 	BED	nog
