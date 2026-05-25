@@ -7,7 +7,6 @@
 package syscall
 
 import (
-	"sync/atomic"
 	"unsafe"
 )
 
