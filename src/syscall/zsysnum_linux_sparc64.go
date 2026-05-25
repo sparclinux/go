@@ -3,7 +3,7 @@
 
 // +build sparc64,linux
 
-package unix
+package syscall
 
 const (
 	SYS_RESTART_SYSCALL        = 0
