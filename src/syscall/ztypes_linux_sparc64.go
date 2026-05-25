@@ -26,9 +26,8 @@ type Timespec struct {
 }
 
 type Timeval struct {
-	Sec       int64
-	Usec      int32
-	Pad_cgo_0 [4]byte
+	Sec  int64
+	Usec int64
 }
 
 type Timex struct {
