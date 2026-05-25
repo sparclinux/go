@@ -10,6 +10,12 @@ import (
 	"unsafe"
 )
 
+const (
+	_SYS_dup      = SYS_DUP2
+	_SYS_getdents = SYS_GETDENTS64
+	_AT_FDCWD     = -0x64
+)
+
 //sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
 //sys	Dup2(oldfd int, newfd int) (err error)
 //sys	Fchown(fd int, uid int, gid int) (err error)
@@ -61,6 +67,7 @@ import (
 //sys	recvmsg(s int, msg *Msghdr, flags int) (n int, err error)
 //sys	sendmsg(s int, msg *Msghdr, flags int) (n int, err error)
 //sys	mmap(addr uintptr, length uintptr, prot int, flags int, fd int, offset int64) (xaddr uintptr, err error)
+//sys	linkat(olddirfd int, oldpath string, newdirfd int, newpath string, flags int) (err error)
 
 func Ioperm(from int, num int, on int) (err error) {
 	return ENOSYS
